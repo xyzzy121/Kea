@@ -1,4 +1,7 @@
-﻿using System;
+﻿using HtmlAgilityPack;
+using iTextSharp.text;
+using iTextSharp.text.pdf;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
@@ -10,9 +13,6 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using HtmlAgilityPack;
-using iTextSharp.text;
-using iTextSharp.text.pdf;
 using Image = iTextSharp.text.Image;
 using Rectangle = iTextSharp.text.Rectangle;
 
@@ -66,7 +66,7 @@ namespace Kea
         {
             List<string> lines = new List<string>();
             lines.AddRange(URLTextbox.Text.Split('\n'));
-            foreach (string line in lines)
+            foreach (var line in lines)
             {
                 int nameEnd = 0;
                 int nameStart = 0;
@@ -165,12 +165,14 @@ namespace Kea
                     i++;
                     processInfo.Invoke((MethodInvoker)delegate { processInfo.Text = $"scoping tab {i}"; }); //run on the UI thread
                     client.Headers.Add("Cookie", "pagGDPR=true;");  //add cookies to bypass age verification
-                    IWebProxy proxy = WebRequest.DefaultWebProxy;   //add default proxy
+#pragma warning disable CS0618 // 'WebProxy.GetDefaultProxy()' is obsolete: 'This method has been deprecated. Please use the proxy selected for you by default. http://go.microsoft.com/fwlink/?linkid=14202'
+                    WebProxy proxy = WebProxy.GetDefaultProxy();    //add default proxy
+#pragma warning restore CS0618 // 'WebProxy.GetDefaultProxy()' is obsolete: 'This method has been deprecated. Please use the proxy selected for you by default. http://go.microsoft.com/fwlink/?linkid=14202'
                     client.Proxy = proxy;
                     string html = await client.DownloadStringTaskAsync(line.Substring(0, urlEnd) + "&page=" + i);
-                    HtmlAgilityPack.HtmlDocument doc = new HtmlAgilityPack.HtmlDocument();   //HtmlAgility magic
+                    var doc = new HtmlAgilityPack.HtmlDocument();   //HtmlAgility magic
                     doc.LoadHtml(html);
-                    HtmlNode div = doc.GetElementbyId("_listUl");
+                    var div = doc.GetElementbyId("_listUl");
                     HtmlNodeCollection childNodes = div.ChildNodes;
                     checkedForLink = false;
                     for (int j = 0; j < childNodes.Count; j++)
@@ -232,12 +234,14 @@ namespace Kea
                 using (WebClient client = new WebClient())
                 {
                     client.Headers.Add("Cookie", "pagGDPR=true;");  //add cookies to bypass age verification
-                    IWebProxy proxy = WebRequest.DefaultWebProxy;    //add default proxy
+#pragma warning disable CS0618 // 'WebProxy.GetDefaultProxy()' is obsolete: 'This method has been deprecated. Please use the proxy selected for you by default. http://go.microsoft.com/fwlink/?linkid=14202'
+                    WebProxy proxy = WebProxy.GetDefaultProxy();    //add default proxy
+#pragma warning restore CS0618 // 'WebProxy.GetDefaultProxy()' is obsolete: 'This method has been deprecated. Please use the proxy selected for you by default. http://go.microsoft.com/fwlink/?linkid=14202'
                     client.Proxy = proxy;
                     string html = client.DownloadString(ToonChapters[t][i]);
-                    HtmlAgilityPack.HtmlDocument doc = new HtmlAgilityPack.HtmlDocument();
+                    var doc = new HtmlAgilityPack.HtmlDocument();
                     doc.LoadHtml(html);
-                    HtmlNode div = doc.GetElementbyId("_imageList");
+                    var div = doc.GetElementbyId("_imageList");
                     HtmlNodeCollection childNodes = div.ChildNodes;
                     if (chapterFoldersCB.Checked || saveAs != "multiple images") { Directory.CreateDirectory(savePath + @"\" + $"({i + 1}) {ToonChapterNames[t][i]}"); }
                     for (int j = 0; j < childNodes.Count; j++)  //...download all images!
@@ -290,7 +294,7 @@ namespace Kea
                         finalHeight += images[j].Height;
                     }
 
-                    using (Bitmap bm = new Bitmap(images[0].Width, finalHeight))
+                    using (var bm = new Bitmap(images[0].Width, finalHeight))
                     {
                         int pointerHeight = 0;
                         using (Graphics g = Graphics.FromImage(bm))
@@ -308,7 +312,7 @@ namespace Kea
                         }
                         else bm.Save($"{savePath}\\({i + 1}) {ToonChapterNames[t][i]}.png");
                     }
-                    foreach (Bitmap image in images)
+                    foreach (var image in images)
                     {
                         image.Dispose();
                     }
@@ -324,12 +328,12 @@ namespace Kea
 
         public static Bitmap ResizeImage(System.Drawing.Image image, int width, int height)
         {
-            System.Drawing.Rectangle destRect = new System.Drawing.Rectangle(0, 0, width, height);
-            Bitmap destImage = new Bitmap(width, height);
+            var destRect = new System.Drawing.Rectangle(0, 0, width, height);
+            var destImage = new Bitmap(width, height);
 
             destImage.SetResolution(image.HorizontalResolution, image.VerticalResolution);
 
-            using (Graphics graphics = Graphics.FromImage(destImage))
+            using (var graphics = Graphics.FromImage(destImage))
             {
                 graphics.CompositingMode = CompositingMode.SourceCopy;
                 graphics.CompositingQuality = CompositingQuality.HighQuality;
@@ -337,7 +341,7 @@ namespace Kea
                 graphics.SmoothingMode = SmoothingMode.HighQuality;
                 graphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
 
-                using (ImageAttributes wrapMode = new ImageAttributes())
+                using (var wrapMode = new ImageAttributes())
                 {
                     wrapMode.SetWrapMode(WrapMode.TileFlipXY);
                     graphics.DrawImage(image, destRect, 0, 0, image.Width, image.Height, GraphicsUnit.Pixel, wrapMode);
@@ -358,13 +362,11 @@ namespace Kea
 
         private void selectFolderBtn_Click(object sender, EventArgs e)
         {
-            OpenFileDialog ofile = new OpenFileDialog
-            {
-                ValidateNames = false,
-                CheckFileExists = false,
-                CheckPathExists = true,
-                FileName = "Folder Selection"
-            };
+            OpenFileDialog ofile = new OpenFileDialog();
+            ofile.ValidateNames = false;
+            ofile.CheckFileExists = false;
+            ofile.CheckPathExists = true;
+            ofile.FileName = "Folder Selection";
             if (DialogResult.OK == ofile.ShowDialog())
             {
                 savepathTB.Text = Path.GetDirectoryName(ofile.FileName);
@@ -386,7 +388,7 @@ namespace Kea
             QueueTextbox.Text = "";
             string name = QueueGrid.SelectedRows[0].Cells[0].Value.ToString();
             QueueGrid.Rows.RemoveAt(QueueGrid.SelectedRows[0].Index);
-            foreach (string line in lines)
+            foreach (var line in lines)
             {
                 if (!line.Contains($"/{name}/")) { QueueTextbox.Text += line + "\n"; }
             }
