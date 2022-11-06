@@ -305,7 +305,7 @@ namespace Kea
                                 pointerHeight += images[k].Height;
                             }
                         }
-                        if (finalHeight > 30000)
+                        if (finalHeight > 32768)
                         {
                             Bitmap resizedImage = ResizeImage(bm, (int)(images[0].Width * (1.0 - (float)(finalHeight - 30000) / finalHeight)), 30000);
                             resizedImage.Save($"{savePath}\\({i + 1}) {ToonChapterNames[t][i]}.png");
